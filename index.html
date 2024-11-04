@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Список фильмов и сериалов</title>
+    <style>
+        /* Стили для основного дизайна */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+        h1 {
+            color: #fff;
+            font-weight: 700;
+            margin-bottom: 20px;
+            font-size: 2.2em;
+        }
+        .container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 25px;
+            box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            z-index: 1;
+        }
+        form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+            border: none;
+            border-radius: 6px;
+            background-color: #333;
+            color: #fff;
+        }
+        button {
+            padding: 12px 20px;
+            font-size: 16px;
+            border: none;
+            background-color: #3498db;
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            padding: 12px;
+            border-bottom: 1px solid #666;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            gap: 10px;
+        }
+        .watched-button, .favorite-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.5em;
+        }
+        .favorite-button {
+            color: #e57373;
+        }
+        .favorite-button.filled {
+            color: #ff4d4d; /* Тёплый красный для заполненного сердца */
+        }
+        .watched-button {
+            font-size: 0.9em;
+            color: #999;
+        }
+        .watched-button.watched {
+            text-decoration: line-through;
+        }
+        .slideshow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .slideshow img {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+        .slideshow img.active {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Список к просмотру</h1>
+    <form id="addForm">
+        <label for="movieInput" class="sr-only">Название фильма или сериала</label>
+        <input type="text" id="movieInput" placeholder="Добавить фильм или сериал" required>
+        <button type="submit">Добавить</button>
+    </form>
+    <ul id="movieList"></ul>
+</div>
+
+<!-- Слайд-шоу фон -->
+<div class="slideshow">
+    <img src="https://i.postimg.cc/brtwmMyv/yuta-okkotsu-3840x2160-15249.jpg" alt="Slide 1" class="active">
+    <img src="https://i.postimg.cc/dtCBzm4k/macos-monterey-wwdc-21-stock-dark-mode-5k-3840x2160-5585.jpg" alt="Slide 2">
+    <img src="https://i.postimg.cc/3NvXQYC5/laferrari-dark-5120x2880-18929.jpg" alt="Slide 3">
+</div>
+
+<script>
+    let slideIndex = 0;
+    const slides = document.querySelectorAll('.slideshow img');
+
+    function showSlides() {
+        slides.forEach((slide, index) => {
+            slide.classList.remove('active');
+            if (index === slideIndex) {
+                slide.classList.add('active');
+            }
+        });
+        slideIndex = (slideIndex + 1) % slides.length;
+    }
+
+    setInterval(showSlides, 5000);
+
+    function saveMovies() {
+        const movies = [];
+        document.querySelectorAll('#movieList li').forEach(item => {
+            movies.push({
+                title: item.querySelector('.movie-title').textContent.trim(),
+                watched: item.querySelector('.watched-button').classList.contains('watched'),
+                favorite: item.querySelector('.favorite-button').classList.contains('filled')
+            });
+        });
+        localStorage.setItem('movies', JSON.stringify(movies));
+    }
+
+    function loadMovies() {
+        const movies = JSON.parse(localStorage.getItem('movies')) || [];
+        movies.forEach(movie => {
+            addMovieToList(movie.title, movie.watched, movie.favorite);
+        });
+    }
+
+    function addMovieToList(title, watched = false, favorite = false) {
+        const li = document.createElement('li');
+        const titleSpan = document.createElement('span');
+        titleSpan.classList.add('movie-title');
+        titleSpan.textContent = title;
+
+        const watchedButton = document.createElement('button');
+        watchedButton.classList.add('watched-button');
+        if (watched) watchedButton.classList.add('watched');
+        watchedButton.textContent = '👁️'; // Минималистичная иконка "глаз"
+        watchedButton.addEventListener('click', function() {
+            watchedButton.classList.toggle('watched');
+            saveMovies();
+        });
+
+        const favoriteButton = document.createElement('button');
+        favoriteButton.classList.add('favorite-button');
+        if (favorite) favoriteButton.classList.add('filled');
+        favoriteButton.innerHTML = favorite ? '❤' : '♡'; // Пустое или заполненное сердце
+        favoriteButton.addEventListener('click', function() {
+            favoriteButton.classList.toggle('filled');
+            favoriteButton.innerHTML = favoriteButton.classList.contains('filled') ? '❤' : '♡';
+            saveMovies();
+        });
+
+        li.appendChild(titleSpan);
+        li.appendChild(watchedButton);
+        li.appendChild(favoriteButton);
+        document.getElementById('movieList').appendChild(li);
+    }
+
+    document.getElementById('addForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const movieTitle = document.getElementById('movieInput').value;
+        if (!movieTitle) return;
+
+        addMovieToList(movieTitle);
+        saveMovies();
+        document.getElementById('movieInput').value = '';
+    });
+
+    loadMovies();
+</script>
+
+</body>
+</html>
